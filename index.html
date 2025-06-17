@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Semester Material Organizer - Persistent Files with IndexedDB</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+    background-color: #f0f4f8;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  header {
+    background-color: #3b82f6;
+    padding: 2rem;
+    text-align: center;
+    color: white;
+    box-shadow: 0 4px 8px rgba(59,130,246,0.3);
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+  }
+
+  main {
+    max-width: 960px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    width: 100%;
+  }
+
+  .form-container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+    margin-bottom: 3rem;
+  }
+
+  .form-container h2 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #1e40af;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  label {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #1e3a8a;
+  }
+
+  input[type="text"],
+  input[type="file"] {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1.8px solid #cbd5e1;
+    transition: border-color 0.25s ease;
+  }
+
+  input[type="text"]:focus,
+  input[type="file"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 8px #3b82f6aa;
+  }
+
+  button {
+    background-color: #3b82f6;
+    color: white;
+    font-weight: 700;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(59,130,246,0.4);
+    transition: background-color 0.25s ease;
+  }
+
+  button:hover,
+  button:focus {
+    background-color: #2563eb;
+  }
+
+  .materials-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .material-item {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    position: relative;
+  }
+
+  .material-title {
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: #1e40af;
+    margin: 0 0 0.75rem 0;
+  }
+
+  img.file-image {
+    max-width: 100%;
+    border-radius: 10px;
+    margin-top: 0.75rem;
+    box-shadow: 0 0 10px rgba(59,130,246,0.25);
+  }
+
+  video.file-video {
+    width: 100%;
+    border-radius: 12px;
+    margin-top: 0.75rem;
+    box-shadow: 0 0 10px rgba(59,130,246,0.25);
+  }
+
+  audio.file-audio {
+    margin-top: 0.8rem;
+    width: 100%;
+    outline: none;
+  }
+
+  iframe.file-pdf, iframe.file-other {
+    width: 100%;
+    height: 340px;
+    border: none;
+    border-radius: 12px;
+    margin-top: 0.75rem;
+  }
+
+  .download-link {
+    margin-top: 0.75rem;
+    display: inline-block;
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .download-link:hover,
+  .download-link:focus {
+    color: #1e40af;
+  }
+
+  .btn-delete {
+    position: absolute;
+    top: 14px;
+    right: 15px;
+    background-color: #ef4444;
+    border: none;
+    border-radius: 8px;
+    padding: 0.3rem 0.7rem;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.25s ease;
+  }
+
+  .btn-delete:hover,
+  .btn-delete:focus {
+    background-color: #b91c1c;
+    outline: none;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Rangkuman Materi</h1>
+</header>
+<main>
+  <section class="form-container" aria-label="Form tambah materi">
+    <h2>Tambah Materi Baru</h2>
+    <form id="materialForm" autocomplete="off" novalidate>
+      <label for="title">Judul Materi</label>
+      <input type="text" id="title" name="title" placeholder="Judul materi pelajaran" required aria-required="true" autocomplete="off" />
+      <label for="file">Upload File (opsional)</label>
+      <input type="file" id="file" name="file" aria-describedby="fileHelp" />
+      <small id="fileHelp" style="color:#475569; font-size:0.85rem; margin-top: -0.5rem; margin-bottom: 0.8rem;">File akan langsung ditampilkan jika didukung, atau link download akan disediakan.</small>
+      <button type="submit" aria-label="Tambah materi">Tambah Materi</button>
+    </form>
+  </section>
+
+  <section class="materials-container" aria-label="Daftar materi semester">
+    <h2>Daftar Materi</h2>
+    <div id="materialsList" tabindex="0" aria-live="polite" aria-atomic="true"></div>
+  </section>
+</main>
+<script>
+  // IndexedDB setup for file storage
+  const DB_NAME = 'semester-storage';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'files';
+
+  let db;
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      if(db) return resolve(db);
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onerror = () => reject(req.error);
+      req.onupgradeneeded = e => {
+        const database = e.target.result;
+        if(!database.objectStoreNames.contains(STORE_NAME)) {
+          database.createObjectStore(STORE_NAME, {keyPath: 'id', autoIncrement: true});
+        }
+      };
+      req.onsuccess = e => {
+        db = e.target.result;
+        resolve(db);
+      };
+    });
+  }
+
+  function addFile(file) {
+    return openDB().then(db => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.add({file});
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  function getFile(id) {
+    return openDB().then(db => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.get(id);
+        req.onsuccess = () => {
+          if(req.result) resolve(req.result.file);
+          else resolve(null);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  function deleteFile(id) {
+    return openDB().then(db => {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    });
+  }
+
+  // App logic
+  const form = document.getElementById('materialForm');
+  const materialsList = document.getElementById('materialsList');
+
+  // Materials array hold {title, fileId, fileName, fileType, blobURL}
+  let materials = JSON.parse(localStorage.getItem('semesterMaterials')) || [];
+
+  async function refreshBlobURLs() {
+    await openDB();
+    for(let mat of materials) {
+      if(mat.fileId) {
+        const file = await getFile(mat.fileId);
+        if(file) {
+          if(mat.blobURL) URL.revokeObjectURL(mat.blobURL);
+          mat.blobURL = URL.createObjectURL(file);
+          mat.fileType = file.type;
+          mat.fileName = file.name;
+        } else {
+          mat.blobURL = null;
+          mat.fileType = '';
+        }
+      }
+    }
+  }
+
+  function createMaterialElement(material, index) {
+    const container = document.createElement('article');
+    container.className = 'material-item';
+    container.setAttribute('tabindex', '-1');
+    container.setAttribute('aria-label', `Materi judul ${material.title}`);
+
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'material-title';
+    titleEl.textContent = material.title;
+    container.appendChild(titleEl);
+
+    if(material.blobURL && material.fileType) {
+      if(material.fileType.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.className = 'file-image';
+        img.src = material.blobURL;
+        img.alt = `Preview gambar materi: ${material.title}`;
+        container.appendChild(img);
+      } else if(material.fileType.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.className = 'file-video';
+        video.controls = true;
+        video.src = material.blobURL;
+        video.setAttribute('aria-label', `Video materi ${material.title}`);
+        container.appendChild(video);
+      } else if(material.fileType.startsWith('audio/')) {
+        const audio = document.createElement('audio');
+        audio.className = 'file-audio';
+        audio.controls = true;
+        audio.src = material.blobURL;
+        audio.setAttribute('aria-label', `Audio materi ${material.title}`);
+        container.appendChild(audio);
+      } else if(material.fileType === 'application/pdf') {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'file-viewer';
+        const iframe = document.createElement('iframe');
+        iframe.className = 'file-pdf';
+        iframe.src = material.blobURL;
+        iframe.title = `Preview PDF: ${material.fileName || 'file'}`;
+        wrapper.appendChild(iframe);
+        container.appendChild(wrapper);
+      } else {
+        const dl = document.createElement('a');
+        dl.className = 'download-link';
+        dl.href = material.blobURL;
+        dl.download = material.fileName || 'file';
+        dl.textContent = `Download: ${material.fileName || 'File'}`;
+        dl.target = '_blank';
+        dl.rel = 'noopener noreferrer';
+        container.appendChild(dl);
+      }
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn-delete';
+    delBtn.title = 'Hapus materi ini';
+    delBtn.setAttribute('aria-label', `Hapus materi ${material.title}`);
+    delBtn.innerText = 'Hapus';
+    delBtn.addEventListener('click', async () => {
+      if(confirm(`Yakin ingin menghapus materi "${material.title}"?`)) {
+        if(material.blobURL) URL.revokeObjectURL(material.blobURL);
+        if(material.fileId) await deleteFile(material.fileId);
+        materials.splice(index, 1);
+        saveMaterials();
+        await refreshBlobURLs();
+        renderMaterials();
+      }
+    });
+    container.appendChild(delBtn);
+
+    return container;
+  }
+
+  function renderMaterials() {
+    materialsList.innerHTML = '';
+    if(materials.length===0) {
+      const info = document.createElement('p');
+      info.textContent = 'Belum ada materi yang dimasukkan.';
+      info.style.textAlign = 'center';
+      info.style.fontStyle = 'italic';
+      info.style.color = '#475569';
+      info.setAttribute('tabindex', '0');
+      materialsList.appendChild(info);
+      return;
+    }
+    materials.forEach((mat, idx) => {
+      const el = createMaterialElement(mat, idx);
+      materialsList.appendChild(el);
+    });
+  }
+
+  function saveMaterials() {
+    const toSave = materials.map(({title, fileId, fileName, fileType}) => ({title,fileId,fileName,fileType}));
+    localStorage.setItem('semesterMaterials', JSON.stringify(toSave));
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const title = form.title.value.trim();
+    if(!title) {
+      alert('Mohon isi judul materi.');
+      return;
+    }
+
+    const fileInput = form.file;
+    let fileId = null;
+    let fileType = '';
+    let fileName = '';
+    if(fileInput && fileInput.files.length >0){
+      const file = fileInput.files[0];
+      fileType = file.type;
+      fileName = file.name;
+      try {
+        fileId = await addFile(file);
+      } catch(e){
+        alert('Gagal menyimpan file.');
+        return;
+      }
+    }
+    const newMaterial = {title,fileId,fileName,fileType};
+    materials.push(newMaterial);
+    saveMaterials();
+    await refreshBlobURLs();
+    renderMaterials();
+
+    form.reset();
+    form.title.focus();
+
+    setTimeout(() => {
+      const lastMaterial = materialsList.lastChild;
+      if(lastMaterial) lastMaterial.focus();
+    },150);
+  });
+
+  async function initialize() {
+    await openDB();
+    await refreshBlobURLs();
+    renderMaterials();
+  }
+
+  initialize();
+</script>
+</body>
+</html>
